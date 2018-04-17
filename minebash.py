@@ -1,11 +1,17 @@
 #!/usr/bin/python
-import readline, random
+import readline, random, io, sys
+
+import curses
+stdscr = curses.initscr()
+curses.noecho()
+curses.cbreak()
 
 NOTHING = 0
 MINE = -1
 FLAG = -2
 UNKNOWN = -3
 
+CURSOR_POSITION=[0,0]
 
 width, height = 9, 9
 minecount = 20
@@ -53,33 +59,87 @@ def setup_playfield(w, h):
                 else:
                     break
     #now that's done, we'll have to calculate the hint numbers
-    for rowindex, row in enumerate(playfield):
-        for colindex, cell in enumerate(row):
-            playfield[colindex][rowindex] = calculate_hint(colindex, rowindex)
+    #for rowindex, row in enumerate(playfield):
+    #    for colindex, cell in enumerate(row):
+    #        playfield[colindex][rowindex] = calculate_hint(colindex, rowindex)
 
 def print_playfield(playfield):
-    print headline
-    for index, row in enumerate(playfield):
+    currentline = 0
+    stdscr.addstr(currentline, 0, headline)
+    currentline +=1
+    #print headline
+    for rowindex, row in enumerate(playfield):
         rowstring = '|'
-        for cell in row:
+        for colindex, cell in enumerate(row):
+            # is the cell selected?
+            selected = False
+            if [colindex, rowindex] == CURSOR_POSITION:
+                rowstring += '['
+                selected = True
+            else:
+                rowstring += ' '
             # did we find a hint?
             if cell >= 0:
-                rowstring += '[' + str(cell) + ']|'
-            elif cell == UNKNOWN:
-                rowstring+='[#]|'
-            elif cell == MINE:
-                rowstring+='[X]|'
-        print rowstring
-        if(index < len(row)-1):
-            print midline
-    print tailline
+                rowstring += str(cell)
+            elif cell == UNKNOWN or cell == MINE:
+                rowstring+='#'
+            if selected:
+                rowstring += ']|'
+            else:
+                rowstring+=' |'
+        #print rowstring
+        stdscr.addstr(currentline, 0, rowstring)
+        currentline +=1
+        if(rowindex < len(row)-1):
+            stdscr.addstr(currentline, 0, midline)
+            currentline +=1
+            #print midline
+    stdscr.addstr(currentline, 0, tailline)
+    currentline +=1
+    #print tailline
 
-def main():
+def hit(x, y):
+    global playfield
+    if playfield[y][x] == UNKNOWN:
+        hint = calculate_hint(x, y)
+        playfield[y][x] = hint
+
+def handle_input(k):
+    global CURSOR_POSITION
+    if k == curses.KEY_LEFT:
+        if CURSOR_POSITION[0] > 0:
+            CURSOR_POSITION[0] -=1
+    elif k == curses.KEY_RIGHT:
+        if CURSOR_POSITION[0] < width-1:
+            CURSOR_POSITION[0] +=1    
+    elif k == curses.KEY_UP:
+        if CURSOR_POSITION[1] > 0:
+            CURSOR_POSITION[1] -=1
+    elif k == curses.KEY_DOWN:
+        if CURSOR_POSITION[1] < height-1:
+            CURSOR_POSITION[1] +=1
+    elif k == ord(' '):
+        hit(CURSOR_POSITION[0], CURSOR_POSITION[1])    
+        
+        
+
+def main(stdscr):
+    stdscr.clear()
     setup_strings(width)
-    #print_playfield(playfield)
-    #TODO: user input
     #generate mines:
     setup_playfield(width, height)
-    print_playfield(playfield)
+    #print_playfield(playfield)
+    #TODO: user input
+    while(True):
+        print_playfield(playfield)
+        key = stdscr.getch()
+        handle_input(key)
+        stdscr.refresh()
+        #stdscr.getkey()
 if __name__ == "__main__":
-    main()
+    curses.wrapper(main)
+    #finally:
+    curses.nocbreak()
+    stdscr.keypad(False)
+    curses.echo()
+    curses.endwin()
