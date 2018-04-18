@@ -10,6 +10,7 @@ NOTHING = 0
 MINE = -1
 FLAG = -2
 UNKNOWN = -3
+FLAG_MINE = -4
 
 CURSOR_POSITION=[0,0]
 FIELDS_CLEARED = 0
@@ -17,7 +18,7 @@ FIELDS_CLEARED = 0
 width, height = 9, 9
 MINECOUNT = 10
 #put logic for program param here
-playfield = [[-3 for x in range(width)] for y in range(height)]
+playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
 
 headline = '.'
 midline = '|'
@@ -39,7 +40,7 @@ def calculate_hint(col, row):
             if x >= 0 and x < len(playfield):
                 for y in range(row-1, row+2):
                     if y >= 0 and y < len(playfield[0]):
-                        if(playfield[y][x] == MINE):
+                        if playfield[y][x] == MINE or playfield[y][x] == FLAG_MINE:
                             hint+=1
     else:
         hint = MINE
@@ -118,6 +119,8 @@ def print_playfield(playfield):
                 rowstring += str(cell)
             elif cell == UNKNOWN or cell == MINE:
                 rowstring+= '#'
+            elif cell == FLAG_MINE or cell == FLAG:
+                rowstring += 'P'
             #elif cell == MINE:
             #    rowstring += 'X'
             if selected:
@@ -133,7 +136,7 @@ def print_playfield(playfield):
             #print midline
     #print currentline
     #print tailline
-    stdscr.addstr(currentline, 0, tailline + str(FIELDS_CLEARED))
+    stdscr.addstr(currentline, 0, tailline)
     currentline +=1
     #print tailline
 
@@ -161,6 +164,18 @@ def check_score():
     if FIELDS_CLEARED == (width*height)-MINECOUNT:
         gameover(True)
 
+def place_flag(x, y):
+    global playfield
+    #playfield[y][x] = playfield[y][x]
+    if playfield[y][x] == MINE:
+        playfield[y][x] = FLAG_MINE
+    elif playfield[y][x] == UNKNOWN:
+        playfield[y][x] = FLAG
+    elif playfield[y][x] == FLAG_MINE:
+        playfield[y][x] = MINE
+    elif playfield[y][x] == FLAG:
+        playfield[y][x] = UNKNOWN
+
 def handle_input(k):
     global CURSOR_POSITION
     if k == curses.KEY_LEFT:
@@ -175,6 +190,8 @@ def handle_input(k):
     elif k == curses.KEY_DOWN:
         if CURSOR_POSITION[1] < height-1:
             CURSOR_POSITION[1] +=1
+    elif k == ord('f'):
+        place_flag(CURSOR_POSITION[0], CURSOR_POSITION[1])
     elif k == ord(' '):
         hit(CURSOR_POSITION[0], CURSOR_POSITION[1])      
 
