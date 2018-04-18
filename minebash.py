@@ -12,6 +12,9 @@ FLAG = -2
 UNKNOWN = -3
 FLAG_MINE = -4
 
+firstmove = False
+FIELD_GENERATED = False
+
 CURSOR_POSITION=[0,0]
 FIELDS_CLEARED = 0
 
@@ -46,24 +49,23 @@ def calculate_hint(col, row):
         hint = MINE
     return hint
 
-def setup_playfield(w, h):
+def setup_playfield(w, h, x, y):
 #do this only once [AFTER THE FIRST GUESS] 
     #randomly distribute mines across the field
-    global playfield
+    global playfield, FIELD_GENERATED
     minesleft = MINECOUNT
     while minesleft > 0:
         for rowindex, row in enumerate(playfield):
             for colindex, cell in enumerate(row):
+                if colindex == x and rowindex == y:
+                    continue
                 if  minesleft > 0 and playfield[colindex][rowindex] != MINE:
                     if random.random() < 0.1:
                         minesleft -= 1
                         playfield[colindex][rowindex] = MINE
                 else:
                     break
-    #now that's done, we'll have to calculate the hint numbers
-    #for rowindex, row in enumerate(playfield):
-    #    for colindex, cell in enumerate(row):
-    #        playfield[colindex][rowindex] = calculate_hint(colindex, rowindex)
+    FIELD_GENERATED = True
 
 def gameover(win):
     stdscr.clear()
@@ -177,7 +179,7 @@ def place_flag(x, y):
         playfield[y][x] = UNKNOWN
 
 def handle_input(k):
-    global CURSOR_POSITION
+    global CURSOR_POSITION, firstmove
     if k == curses.KEY_LEFT:
         if CURSOR_POSITION[0] > 0:
             CURSOR_POSITION[0] -=1
@@ -193,19 +195,25 @@ def handle_input(k):
     elif k == ord('f'):
         place_flag(CURSOR_POSITION[0], CURSOR_POSITION[1])
     elif k == ord(' '):
-        hit(CURSOR_POSITION[0], CURSOR_POSITION[1])      
+        if not firstmove:
+            firstmove = True
+        else:
+            hit(CURSOR_POSITION[0], CURSOR_POSITION[1])      
 
 def main(stdscr):
+
     stdscr.clear()
     setup_strings(width)
     #generate mines:
-    setup_playfield(width, height)
     #print_playfield(playfield)
     #TODO: user input
     while(True):
         print_playfield(playfield)
         key = stdscr.getch()
         handle_input(key)
+        if (firstmove) and not (FIELD_GENERATED):
+            setup_playfield(width, height, CURSOR_POSITION[0], CURSOR_POSITION[1])
+            handle_input(key)
         check_score()
         stdscr.refresh()
         #stdscr.getkey()
