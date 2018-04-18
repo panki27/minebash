@@ -104,8 +104,16 @@ def gameover(win):
         mins = elapsed / 60
         secs = elapsed % 60
         winstr = 'You win! It took you {}:{} to bash the field!'.format(int(mins), str(round(secs, 2)).zfill(5))
-        stdscr.addstr(0, 0, winstr)
-        stdscr.addstr(1,0, 'Press q to quit!')
+        stdscr.addstr(0, 0, ' /$$      /$$           /$$ /$$       /$$$$$$$                                /$$')
+        stdscr.addstr(1, 0, '| $$  /$ | $$          | $$| $$      | $$__  $$                              | $$')
+        stdscr.addstr(2, 0, '| $$ /$$$| $$  /$$$$$$ | $$| $$      | $$  \ $$  /$$$$$$  /$$$$$$$   /$$$$$$ | $$')
+        stdscr.addstr(3, 0, '| $$/$$ $$ $$ /$$__  $$| $$| $$      | $$  | $$ /$$__  $$| $$__  $$ /$$__  $$| $$')
+        stdscr.addstr(4, 0, '| $$$$_  $$$$| $$$$$$$$| $$| $$      | $$  | $$| $$  \ $$| $$  \ $$| $$$$$$$$|__/')
+        stdscr.addstr(5, 0, '| $$$/ \  $$$| $$_____/| $$| $$      | $$  | $$| $$  | $$| $$  | $$| $$_____/    ')
+        stdscr.addstr(6, 0, '| $$/   \  $$|  $$$$$$$| $$| $$      | $$$$$$$/|  $$$$$$/| $$  | $$|  $$$$$$$ /$$')
+        stdscr.addstr(7, 0, '|__/     \__/ \_______/|__/|__/      |_______/  \______/ |__/  |__/ \_______/|__/')
+        stdscr.addstr(10, 0, winstr)
+        stdscr.addstr(11,0, 'Press q to quit!')
     while True:
         key = stdscr.getch()
         if key == ord('q'):
