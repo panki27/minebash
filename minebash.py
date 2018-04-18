@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 import readline, random, io, sys
 
 import curses
@@ -33,12 +33,12 @@ def setup_strings(colcount):
 
 def calculate_hint(col, row):
     hint = 0
-    if playfield[col][row] != MINE:
+    if playfield[row][col] != MINE:
         for x in range(col-1, col+2):
             if x >= 0 and x < len(playfield)-1:
                 for y in range(row-1, row+2):
                     if y >= 0 and y < len(playfield[0])-1:
-                        if(playfield[x][y] == MINE):
+                        if(playfield[y][x] == MINE):
                             hint+=1
     else:
         hint = MINE
@@ -81,8 +81,10 @@ def print_playfield(playfield):
             # did we find a hint?
             if cell >= 0:
                 rowstring += str(cell)
-            elif cell == UNKNOWN or cell == MINE:
-                rowstring+='#'
+            elif cell == UNKNOWN:
+                rowstring+= '#'
+            elif cell == MINE:
+		rowstring += 'X'
             if selected:
                 rowstring += ']|'
             else:
