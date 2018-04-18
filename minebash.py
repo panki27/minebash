@@ -29,7 +29,8 @@ if len(sys.argv) > 1:
     if len(sys.argv) == 4:
         width = int(sys.argv[1])
         height = int(sys.argv[2])
-        MINECOUNT = int(sys.argv[3])
+        if int(sys.argv[3]) < width*height:
+            MINECOUNT = int(sys.argv[3])
     else:
         print('Specify parameters as width height minecount (for example ./minebash.py 5 5 7)')
         sys.exit(0)
@@ -144,7 +145,7 @@ def gameover(win):
 
 def print_playfield(playfield, screen):
     currentline = 0
-    screen.addstr(currentline, 0, headline)
+    screen.addstr(currentline, 10, headline)
     currentline +=1
     #print headline
     for rowindex, row in enumerate(playfield):
@@ -173,12 +174,12 @@ def print_playfield(playfield, screen):
             else:
                 rowstring+=' |'
         #print rowstring
-        screen.addstr(currentline, 0, rowstring)
+        screen.addstr(currentline, 10, rowstring)
         currentline +=1
         if(rowindex < len(row)-1):
-            screen.addstr(currentline, 0, midline)
+            screen.addstr(currentline, 10, midline)
             currentline +=1
-    screen.addstr(currentline, 0, tailline)
+    screen.addstr(currentline, 10, tailline)
     currentline +=1
     #print tailline
 
@@ -246,7 +247,7 @@ def handle_input(k):
 
 def print_score(screen):
     scorestr = 'Mines: {} Flags: {}'.format(MINECOUNT, FLAGCOUNT)
-    screen.addstr(19 ,0,scorestr)
+    screen.addstr(19 ,20,scorestr)
 
 def main(stdscr):
     global SCREEN
