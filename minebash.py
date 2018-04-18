@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import readline, random, io, sys
+import readline, random, io, sys, time, os
 
 import curses
 stdscr = curses.initscr()
@@ -12,6 +12,8 @@ FLAG = -2
 UNKNOWN = -3
 FLAG_MINE = -4
 
+STARTTIME = 0
+
 firstmove = False
 FIELD_GENERATED = False
 
@@ -20,6 +22,7 @@ FIELDS_CLEARED = 0
 
 width, height = 9, 9
 MINECOUNT = 10
+FLAGCOUNT = 0
 #put logic for program param here
 playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
 
@@ -50,9 +53,9 @@ def calculate_hint(col, row):
     return hint
 
 def setup_playfield(w, h, x, y):
-#do this only once [AFTER THE FIRST GUESS] 
+#do this only once [AFTER THE FIRST GUESS] -> Done
     #randomly distribute mines across the field
-    global playfield, FIELD_GENERATED
+    global playfield, FIELD_GENERATED, STARTTIME
     minesleft = MINECOUNT
     while minesleft > 0:
         for rowindex, row in enumerate(playfield):
@@ -66,6 +69,7 @@ def setup_playfield(w, h, x, y):
                 else:
                     break
     FIELD_GENERATED = True
+    STARTTIME = time.time()
 
 def gameover(win):
     stdscr.clear()
@@ -93,13 +97,21 @@ def gameover(win):
         stdscr.addstr(20, 0, '                        (        |(||(||)||||        )')
         stdscr.addstr(21, 0, '                          (     //|/l|||)|\\ \     )')
         stdscr.addstr(22, 0, '                        (/ / //  /|//||||\\  \ \  \ _)')        
-        stdscr.addstr(23, 0, '                           You lose! Press q to quit.')
+        stdscr.addstr(23, 0, '                          You lose! Press q to quit.')
     else:
-        stdscr.addstr(0, 0, 'You win! Press q to quit.')
+        now = time.time()
+        elapsed = now - STARTTIME
+        mins = elapsed / 60
+        secs = elapsed % 60
+        winstr = 'You win! It took you {}:{} to bash the field!'.format(int(mins), str(round(secs, 2)).zfill(5))
+        stdscr.addstr(0, 0, winstr)
+        stdscr.addstr(1,0, 'Press q to quit!')
     while True:
         key = stdscr.getch()
         if key == ord('q'):
             sys.exit(0)
+        #if key == ord('r'):
+        #    os.execl(sys.executable, sys.executable, *sys.argv)
 
 def print_playfield(playfield):
     currentline = 0
@@ -117,8 +129,10 @@ def print_playfield(playfield):
             else:
                 rowstring += ' '
             # did we find a hint?
-            if cell >= 0:
+            if cell > 0:
                 rowstring += str(cell)
+            elif cell == 0:
+                rowstring += ' '
             elif cell == UNKNOWN or cell == MINE:
                 rowstring+= '#'
             elif cell == FLAG_MINE or cell == FLAG:
@@ -167,16 +181,20 @@ def check_score():
         gameover(True)
 
 def place_flag(x, y):
-    global playfield
+    global playfield, FLAGCOUNT
     #playfield[y][x] = playfield[y][x]
     if playfield[y][x] == MINE:
         playfield[y][x] = FLAG_MINE
+        FLAGCOUNT += 1
     elif playfield[y][x] == UNKNOWN:
         playfield[y][x] = FLAG
+        FLAGCOUNT += 1
     elif playfield[y][x] == FLAG_MINE:
         playfield[y][x] = MINE
+        FLAGCOUNT -= 1
     elif playfield[y][x] == FLAG:
         playfield[y][x] = UNKNOWN
+        FLAGCOUNT -=1
 
 def handle_input(k):
     global CURSOR_POSITION, firstmove
@@ -200,6 +218,10 @@ def handle_input(k):
         else:
             hit(CURSOR_POSITION[0], CURSOR_POSITION[1])      
 
+def print_score():
+    scorestr = 'Mines: {} Flags: {}'.format(MINECOUNT, FLAGCOUNT)
+    stdscr.addstr(19 ,0,scorestr)
+
 def main(stdscr):
 
     stdscr.clear()
@@ -214,7 +236,9 @@ def main(stdscr):
         if (firstmove) and not (FIELD_GENERATED):
             setup_playfield(width, height, CURSOR_POSITION[0], CURSOR_POSITION[1])
             handle_input(key)
+            STARTTIME = time.time()
         check_score()
+        print_score()
         stdscr.refresh()
         #stdscr.getkey()
 if __name__ == "__main__":
