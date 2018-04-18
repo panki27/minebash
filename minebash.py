@@ -149,32 +149,34 @@ def print_playfield(playfield, screen):
     currentline +=1
     #print headline
     for rowindex, row in enumerate(playfield):
-        rowstring = '|'
+        screen.addstr(currentline, 10, '|')
+        pos = 11
         for colindex, cell in enumerate(row):
             # is the cell selected?
             selected = False
             if [colindex, rowindex] == CURSOR_POSITION:
-                rowstring += '['
+                screen.addstr(currentline, pos, '[')
                 selected = True
             else:
-                rowstring += ' '
+                screen.addstr(currentline, pos, ' ')
+            pos += 1
             # did we find a hint?
             if cell > 0:
-                rowstring += str(cell)
+                screen.addstr(currentline, pos, str(cell))
             elif cell == 0:
-                rowstring += ' '
+                screen.addstr(currentline, pos, ' ')
             elif cell == UNKNOWN or cell == MINE:
-                rowstring+= '#'
+                screen.addstr(currentline, pos, '#') #rowstring+= '#'
             elif cell == FLAG_MINE or cell == FLAG:
-                rowstring += 'P'
+                screen.addstr(currentline, pos, 'P') #rowstring += 'P'
             #elif cell == MINE:
             #    rowstring += 'X'
+            pos += 1
             if selected:
-                rowstring += ']|'
+                screen.addstr(currentline, pos, ']|')
             else:
-                rowstring+=' |'
-        #print rowstring
-        screen.addstr(currentline, 10, rowstring)
+                screen.addstr(currentline, pos, ' |')
+            pos += 2
         currentline +=1
         if(rowindex < len(row)-1):
             screen.addstr(currentline, 10, midline)
