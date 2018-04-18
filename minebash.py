@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#TODO: Color, show controls, command line param
+#TODO: show controls, restartable
 
 import readline, random, io, sys, time, os
 
@@ -80,16 +80,11 @@ def setup_playfield(w, h, x, y):
     global playfield, FIELD_GENERATED, STARTTIME
     minesleft = MINECOUNT
     while minesleft > 0:
-        for rowindex, row in enumerate(playfield):
-            for colindex, cell in enumerate(row):
-                if colindex == x and rowindex == y:
-                    continue
-                if  minesleft > 0 and playfield[colindex][rowindex] != MINE:
-                    if random.random() < 0.1:
-                        minesleft -= 1
-                        playfield[colindex][rowindex] = MINE
-                else:
-                    break
+        randx = random.randint(0, width-1)
+        randy = random.randint(1, height-1)
+        if playfield[randy][randx] != MINE and randx != x and randy != y:
+            playfield[randy][randx] = MINE
+            minesleft -= 1
     FIELD_GENERATED = True
     STARTTIME = time.time()
 
@@ -145,7 +140,7 @@ def gameover(win):
 
 def print_playfield(playfield, screen):
     currentline = 0
-    screen.addstr(currentline, 10, headline)
+    screen.addstr(currentline, 10, headline, curses.color_pair(1))
     currentline +=1
     #print headline
     for rowindex, row in enumerate(playfield):
@@ -162,13 +157,16 @@ def print_playfield(playfield, screen):
             pos += 1
             # did we find a hint?
             if cell > 0:
-                screen.addstr(currentline, pos, str(cell))
+                if cell == 1:   color = curses.color_pair(3) #cyan
+                elif cell == 2: color = curses.color_pair(4) #blue
+                else:           color = curses.color_pair(5) #yellow
+                screen.addstr(currentline, pos, str(cell), color)
             elif cell == 0:
                 screen.addstr(currentline, pos, ' ')
             elif cell == UNKNOWN or cell == MINE:
-                screen.addstr(currentline, pos, '#') #rowstring+= '#'
+                screen.addstr(currentline, pos, '#', curses.color_pair(7)) #rowstring+= '#'
             elif cell == FLAG_MINE or cell == FLAG:
-                screen.addstr(currentline, pos, 'P') #rowstring += 'P'
+                screen.addstr(currentline, pos, 'P', curses.color_pair(2)) #rowstring += 'P'
             #elif cell == MINE:
             #    rowstring += 'X'
             pos += 1
@@ -249,15 +247,25 @@ def handle_input(k):
 
 def print_score(screen):
     scorestr = 'Mines: {} Flags: {}'.format(MINECOUNT, FLAGCOUNT)
-    screen.addstr(19 ,20,scorestr)
+    screen.addstr(19 ,20, scorestr)
+
+def setup_colors():
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_WHITE)
+        
 
 def main(stdscr):
     global SCREEN
     SCREEN = stdscr
     stdscr.clear()
     setup_strings(width)
+    setup_colors()
     #generate mines:
-    #print_playfield(playfield)
     #TODO: user input
     while(True):
         print_playfield(playfield, stdscr)
