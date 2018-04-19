@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #TODO: show controls, restartable, command line flags like "easy, hard"
 
-import readline, random, io, sys, time, os
+import random, io, sys, time, os
 
 import curses
 from curses import wrapper
@@ -65,7 +65,9 @@ if len(sys.argv) > 1:
             width = 12
             height = 12
             MINECOUNT = 35
-
+        else:
+            print(param_error)
+            sys.exit(0)
         difficulty = sys.argv[1] 
     elif len(sys.argv) == 4: #this means the user has specified width, height and minecount
         width = int(sys.argv[1])
@@ -77,7 +79,7 @@ if len(sys.argv) > 1:
             print('Minecount muss be less than width x height.')
             system.exit(0)
     else:
-        print('Specify parameters as width height minecount (for example ./minebash.py 5 5 7)')
+        print(param_error)
         sys.exit(0)
 playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
 
