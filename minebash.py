@@ -1,0 +1,337 @@
+#!/usr/bin/env python3
+#TODO: show controls, restartable, command line flags like "easy, hard"
+
+import random, io, sys, time, os
+
+import curses
+from curses import wrapper
+
+NOTHING = 0
+MINE = -1
+FLAG = -2
+UNKNOWN = -3
+FLAG_MINE = -4
+
+score_x, score_y = 0, 0
+OFFSET = 11
+
+STARTTIME = 0
+
+SCREEN = 0
+
+firstmove = False
+FIELD_GENERATED = False
+
+CURSOR_POSITION=[0,0]
+FIELDS_CLEARED = 0
+
+width, height = 9, 9
+MINECOUNT = 10
+FLAGCOUNT = 0
+
+difficulty = 'medium'
+
+param_error = 'minebash: Invalid parameters. See \'minebash ?\' for help '
+helpstr = '''Usage: minebash [easy|medium|hard] [width height minecount]
+    
+Difficulty presets:
+    easy:    5x5  4 mines
+    medium:  9x9 15 mines
+    hard:  12x12 35 mines
+Specify your own:
+    4 4 4    4x4  4 mines
+    8 8 10   8x8  10 mines
+
+Controls:
+    Arrow Keys: Move Cursor
+    Spacebar:   Try field
+    F:          Place flag 
+'''
+
+if len(sys.argv) > 1:
+    if len(sys.argv) == 2: #param is string like easy, hard
+        if sys.argv[1] == '?':
+            print(helpstr)
+            sys.exit(0)
+        if sys.argv[1] == 'easy':
+            width = 5
+            height = 5
+            MINECOUNT = 4
+        elif sys.argv[1] == 'medium':
+            width = 9
+            height = 9
+            MINECOUNT = 15
+        elif sys.argv[1] == 'hard':
+            width = 12
+            height = 12
+            MINECOUNT = 35
+        else:
+            print(param_error)
+            sys.exit(0)
+        difficulty = sys.argv[1] 
+    elif len(sys.argv) == 4: #this means the user has specified width, height and minecount
+        width = int(sys.argv[1])
+        height = int(sys.argv[2])
+        if int(sys.argv[3]) < width*height:
+            MINECOUNT = int(sys.argv[3])
+            difficulty = 'custom'
+        else:
+            print('Minecount muss be less than width x height.')
+            system.exit(0)
+    else:
+        print(param_error)
+        sys.exit(0)
+playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
+
+
+#stdscr = curses.initscr()
+#curses.noecho()
+#curses.cbreak()
+headline = '.'
+midline = '|'
+tailline = '\''
+
+def setup_strings(colcount):
+    #setup lines to print
+    for i in range(colcount):
+        global headline, midline, tailline
+        headline += '---.'
+        midline += '---|'
+        tailline += '---\''
+
+def endgame(msg=''):
+ #   curses.nocbreak()
+  #  stdscr.keypad(False)
+   # curses.echo()
+    #curses.endwin()
+    if msg != '':
+        print(msg)
+    sys.exit(0)
+
+def calculate_hint(col, row):
+    hint = 0
+    if playfield[row][col] != MINE:
+        for x in range(col-1, col+2):
+            if x >= 0 and x < len(playfield):
+                for y in range(row-1, row+2):
+                    if y >= 0 and y < len(playfield[0]):
+                        if playfield[y][x] == MINE or playfield[y][x] == FLAG_MINE:
+                            hint+=1
+    else:
+        hint = MINE
+    return hint
+
+def setup_playfield(w, h, x, y):
+#do this only once [AFTER THE FIRST GUESS] -> Done
+    #randomly distribute mines across the field
+    global playfield, FIELD_GENERATED, STARTTIME
+
+    minesleft = MINECOUNT
+    while minesleft > 0:
+        randx = random.randint(0, width-1)
+        randy = random.randint(1, height-1)
+        if playfield[randy][randx] != MINE and randx != x and randy != y:
+            playfield[randy][randx] = MINE
+            minesleft -= 1
+    FIELD_GENERATED = True
+    STARTTIME = time.time()
+
+def gameover(win):
+    SCREEN.clear()
+    if not win:
+        SCREEN.addstr(0, 0, '                               ________________')
+        SCREEN.addstr(1, 0, '                          ____/ (  (    )   )  \___')
+        SCREEN.addstr(2, 0, '                         /( (  (  )   _    ))  )   )\ ')
+        SCREEN.addstr(3, 0, '                       ((     (   )(    )  )   (   )  )')
+        SCREEN.addstr(4, 0, '                     ((/  ( _(   )   (   _) ) (  () )  )')
+        SCREEN.addstr(5, 0, '                    ( (  ( (_)   ((    (   )  .((_ ) .  )_')
+        SCREEN.addstr(6, 0, '                   ( (  )    (      (  )    )   ) . ) (   )')
+        SCREEN.addstr(7, 0, '                  (  (   (  (   ) (  _  ( _) ).  ) . ) ) ( )')
+        SCREEN.addstr(8, 0, '                  ( (  (   ) (  )   (  ))     ) _)(   )  )  )')
+        SCREEN.addstr(9, 0, '                 ( (  ( \ ) (    (_  ( ) ( )  )   ) )  )) ( )')
+        SCREEN.addstr(10, 0, '                  (  (   (  (   (_ ( ) ( _    )  ) (  )  )   )')
+        SCREEN.addstr(11, 0, '                 ( (  ( (  (  )     (_  )  ) )  _)   ) _( ( )')
+        SCREEN.addstr(12, 0, '                  ((  (   )(    (     _    )   _) _(_ (  (_ )')
+        SCREEN.addstr(13, 0, '                   (_((__(_(__(( ( ( |  ) ) ) )_))__))_)___)')
+        SCREEN.addstr(14, 0, '                   ((__)        \\||lll|l||///          \_))')
+        SCREEN.addstr(15, 0, '                            (   /(/ (  )  ) )\   )')
+        SCREEN.addstr(16, 0, '                          (    ( ( ( | | ) ) )\   )')
+        SCREEN.addstr(17, 0, '                           (   /(| / ( )) ) ) )) )')
+        SCREEN.addstr(18, 0, '                         (     ( ((((_(|)_)))))     )')
+        SCREEN.addstr(19, 0, '                          (      ||\(|(|)|/||     )')
+        SCREEN.addstr(20, 0, '                        (        |(||(||)||||        )')
+        SCREEN.addstr(21, 0, '                          (     //|/l|||)|\\ \     )')
+        SCREEN.addstr(22, 0, '                        (/ / //  /|//||||\\  \ \  \ _)')        
+        SCREEN.addstr(23, 0, '                          You lose! Press q to quit.')
+    else:
+        now = time.time()
+        elapsed = now - STARTTIME
+        mins = elapsed / 60
+        secs = elapsed % 60
+        winstr = 'You win! It took you {}:{} to bash the field!'.format(int(mins), str(round(secs, 2)).zfill(5))
+        SCREEN.addstr(0, 0, ' /$$      /$$           /$$ /$$       /$$$$$$$                                /$$')
+        SCREEN.addstr(1, 0, '| $$  /$ | $$          | $$| $$      | $$__  $$                              | $$')
+        SCREEN.addstr(2, 0, '| $$ /$$$| $$  /$$$$$$ | $$| $$      | $$  \ $$  /$$$$$$  /$$$$$$$   /$$$$$$ | $$')
+        SCREEN.addstr(3, 0, '| $$/$$ $$ $$ /$$__  $$| $$| $$      | $$  | $$ /$$__  $$| $$__  $$ /$$__  $$| $$')
+        SCREEN.addstr(4, 0, '| $$$$_  $$$$| $$$$$$$$| $$| $$      | $$  | $$| $$  \ $$| $$  \ $$| $$$$$$$$|__/')
+        SCREEN.addstr(5, 0, '| $$$/ \  $$$| $$_____/| $$| $$      | $$  | $$| $$  | $$| $$  | $$| $$_____/    ')
+        SCREEN.addstr(6, 0, '| $$/   \  $$|  $$$$$$$| $$| $$      | $$$$$$$/|  $$$$$$/| $$  | $$|  $$$$$$$ /$$')
+        SCREEN.addstr(7, 0, '|__/     \__/ \_______/|__/|__/      |_______/  \______/ |__/  |__/ \_______/|__/')
+        SCREEN.addstr(10, 0, winstr)
+        SCREEN.addstr(11,0, 'Press q to quit!')
+    while True:
+        key = SCREEN.getch()
+        if key == ord('q'):
+            endgame()
+        #if key == ord('r'):
+        #    os.execl(sys.executable, sys.executable, *sys.argv)
+
+def print_playfield(playfield, screen):
+    global score_x, score_y
+    currentline = 0
+    screen.addstr(currentline, 10, headline, curses.color_pair(1))
+    currentline +=1
+    #print headline
+    for rowindex, row in enumerate(playfield):
+        screen.addstr(currentline, 10, '|')
+        pos = OFFSET
+        for colindex, cell in enumerate(row):
+            # is the cell selected?
+            selected = False
+            if [colindex, rowindex] == CURSOR_POSITION:
+                screen.addstr(currentline, pos, '[')
+                selected = True
+            else:
+                screen.addstr(currentline, pos, ' ')
+            pos += 1
+            # did we find a hint?
+            if cell > 0:
+                if cell == 1:   color = curses.color_pair(3) #cyan
+                elif cell == 2: color = curses.color_pair(4) #blue
+                else:           color = curses.color_pair(5) #yellow
+                screen.addstr(currentline, pos, str(cell), color)
+            elif cell == 0:
+                screen.addstr(currentline, pos, ' ')
+            elif cell == UNKNOWN or cell == MINE:
+                screen.addstr(currentline, pos, '#', curses.color_pair(7)) #rowstring+= '#'
+            elif cell == FLAG_MINE or cell == FLAG:
+                screen.addstr(currentline, pos, 'P', curses.color_pair(2)) #rowstring += 'P'
+            #elif cell == MINE:
+            #    rowstring += 'X'
+            pos += 1
+            if selected:
+                screen.addstr(currentline, pos, ']|')
+            else:
+                screen.addstr(currentline, pos, ' |')
+            pos += 2
+        currentline +=1
+        if(rowindex < len(row)-1):
+            screen.addstr(currentline, 10, midline)
+            currentline +=1
+    screen.addstr(currentline, 10, tailline)
+    currentline +=1
+    score_y = currentline
+    score_x = int(pos/2)
+    #print tailline
+
+def hit(x, y, recursive_call=False):
+    global playfield, FIELDS_CLEARED
+    if playfield[y][x] == UNKNOWN:
+        hint = calculate_hint(x, y)
+        playfield[y][x] = hint
+        FIELDS_CLEARED += 1
+        if not recursive_call and hint == NOTHING:
+            for i in range(x-1, x+2):
+                for j in range(y-1, y+2):
+                    if i >= 0 and i < width:
+                        if j >= 0 and j< height:
+                            if playfield[j][i] == UNKNOWN:
+                                    hint = calculate_hint(i, j)
+                                    if hint > 0 and hint<3:
+                                        hit(i,j, True)
+                                    if hint == 0:
+                                        hit(i,j)
+    elif playfield[y][x] == MINE:
+        gameover(False)
+
+def check_score():
+    if FIELDS_CLEARED == (width*height)-MINECOUNT:
+        gameover(True)
+
+def place_flag(x, y):
+    global playfield, FLAGCOUNT
+    #playfield[y][x] = playfield[y][x]
+    if playfield[y][x] == MINE:
+        playfield[y][x] = FLAG_MINE
+        FLAGCOUNT += 1
+    elif playfield[y][x] == UNKNOWN:
+        playfield[y][x] = FLAG
+        FLAGCOUNT += 1
+    elif playfield[y][x] == FLAG_MINE:
+        playfield[y][x] = MINE
+        FLAGCOUNT -= 1
+    elif playfield[y][x] == FLAG:
+        playfield[y][x] = UNKNOWN
+        FLAGCOUNT -=1
+
+def handle_input(k):
+    global CURSOR_POSITION, firstmove
+    if k == curses.KEY_LEFT:
+        if CURSOR_POSITION[0] > 0:
+            CURSOR_POSITION[0] -=1
+    elif k == curses.KEY_RIGHT:
+        if CURSOR_POSITION[0] < width-1:
+            CURSOR_POSITION[0] +=1    
+    elif k == curses.KEY_UP:
+        if CURSOR_POSITION[1] > 0:
+            CURSOR_POSITION[1] -=1
+    elif k == curses.KEY_DOWN:
+        if CURSOR_POSITION[1] < height-1:
+            CURSOR_POSITION[1] +=1
+    elif k == ord('f'):
+        if FIELD_GENERATED:
+            place_flag(CURSOR_POSITION[0], CURSOR_POSITION[1])
+    elif k == ord(' '):
+        if not firstmove:
+            firstmove = True
+        else:
+            hit(CURSOR_POSITION[0], CURSOR_POSITION[1])      
+
+def print_score(screen):
+    scorestr = 'Mines: {} Flags: {} Difficulty: {}'.format(MINECOUNT, FLAGCOUNT, difficulty)
+    xpos = int((score_x) - (len(scorestr)/2)) + int(OFFSET/2)
+    screen.addstr(score_y, xpos, scorestr)
+
+def setup_colors():
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_WHITE)
+        
+
+def main(stdscr):
+    global SCREEN
+    SCREEN = stdscr
+    stdscr.clear()
+    setup_strings(width)
+    setup_colors()
+    #generate mines:
+    #TODO: user input
+    while(True):
+        print_playfield(playfield, stdscr)
+        key = stdscr.getch()
+        handle_input(key)
+        if (firstmove) and not (FIELD_GENERATED):
+            setup_playfield(width, height, CURSOR_POSITION[0], CURSOR_POSITION[1])
+            handle_input(key)
+            STARTTIME = time.time()
+        check_score()
+        print_score(stdscr)
+        stdscr.refresh()
+        #stdscr.getkey()
+if __name__ == "__main__":
+    wrapper(main)
+
