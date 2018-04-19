@@ -2,17 +2,18 @@
 
 minebash is a minesweeper implementation in Python for the Linux command line.
 
-##Features
+## Features
 
 1. Color
 2. User specified field size & minecounts
 3. Difficulty presets
 
-##Dependencies
+## Dependencies
 
 1. None, aside from curses which is standard in Python on Linux
 
-##Setup  
+## Setup  
+
 ```
 git clone https://github.com/panki27/minebash.git
 cd minebash
@@ -20,10 +21,10 @@ chmod +x minebash
 ./minebash
 ```
 
-##Controls
+## Controls
 - Arrow Keys: Move Cursor
 - Spacebar: Check field
 - F: Place flag
 
-##Command line options
+## Command line options
 See 'minebash ?'
