@@ -334,4 +334,3 @@ def main(stdscr):
         #stdscr.getkey()
 if __name__ == "__main__":
     wrapper(main)
-
