@@ -12,6 +12,9 @@ FLAG = -2
 UNKNOWN = -3
 FLAG_MINE = -4
 
+score_x, score_y = 0, 0
+OFFSET = 11
+
 STARTTIME = 0
 
 SCREEN = 0
@@ -78,6 +81,7 @@ def setup_playfield(w, h, x, y):
 #do this only once [AFTER THE FIRST GUESS] -> Done
     #randomly distribute mines across the field
     global playfield, FIELD_GENERATED, STARTTIME
+
     minesleft = MINECOUNT
     while minesleft > 0:
         randx = random.randint(0, width-1)
@@ -139,13 +143,14 @@ def gameover(win):
         #    os.execl(sys.executable, sys.executable, *sys.argv)
 
 def print_playfield(playfield, screen):
+    global score_x, score_y
     currentline = 0
     screen.addstr(currentline, 10, headline, curses.color_pair(1))
     currentline +=1
     #print headline
     for rowindex, row in enumerate(playfield):
         screen.addstr(currentline, 10, '|')
-        pos = 11
+        pos = OFFSET
         for colindex, cell in enumerate(row):
             # is the cell selected?
             selected = False
@@ -181,6 +186,8 @@ def print_playfield(playfield, screen):
             currentline +=1
     screen.addstr(currentline, 10, tailline)
     currentline +=1
+    score_y = currentline
+    score_x = int(pos/2)
     #print tailline
 
 def hit(x, y, recursive_call=False):
@@ -238,7 +245,8 @@ def handle_input(k):
         if CURSOR_POSITION[1] < height-1:
             CURSOR_POSITION[1] +=1
     elif k == ord('f'):
-        place_flag(CURSOR_POSITION[0], CURSOR_POSITION[1])
+        if FIELD_GENERATED:
+            place_flag(CURSOR_POSITION[0], CURSOR_POSITION[1])
     elif k == ord(' '):
         if not firstmove:
             firstmove = True
@@ -247,7 +255,8 @@ def handle_input(k):
 
 def print_score(screen):
     scorestr = 'Mines: {} Flags: {}'.format(MINECOUNT, FLAGCOUNT)
-    screen.addstr(19 ,20, scorestr)
+    xpos = int((score_x) - (len(scorestr)/2)) + int(OFFSET/2)
+    screen.addstr(score_y, xpos, scorestr)
 
 def setup_colors():
     curses.start_color()
