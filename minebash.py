@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#TODO: show controls, restartable
+#TODO: show controls, restartable, command line flags like "easy, hard"
 
 import readline, random, io, sys, time, os
 
@@ -28,12 +28,54 @@ FIELDS_CLEARED = 0
 width, height = 9, 9
 MINECOUNT = 10
 FLAGCOUNT = 0
+
+difficulty = 'medium'
+
+param_error = 'minebash: Invalid parameters. See \'minebash.py ?\' for help '
+helpstr = '''Usage: minebash.py [easy|medium|hard] [width height minecount]
+    
+Difficulty presets:
+    easy:    5x5  4 mines
+    medium:  9x9 15 mines
+    hard:  12x12 35 mines
+Specify your own:
+    4 4 4    4x4  4 mines
+    8 8 10   8x8  10 mines
+
+Controls:
+    Arrow Keys: Move Cursor
+    Spacebar:   Try field
+    F:          Place flag 
+'''
+
 if len(sys.argv) > 1:
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 2: #param is string like easy, hard
+        if sys.argv[1] == '?':
+            print(helpstr)
+            sys.exit(0)
+        if sys.argv[1] == 'easy':
+            width = 5
+            height = 5
+            MINECOUNT = 4
+        elif sys.argv[1] == 'medium':
+            width = 9
+            height = 9
+            MINECOUNT = 15
+        elif sys.argv[1] == 'hard':
+            width = 12
+            height = 12
+            MINECOUNT = 35
+
+        difficulty = sys.argv[1] 
+    elif len(sys.argv) == 4: #this means the user has specified width, height and minecount
         width = int(sys.argv[1])
         height = int(sys.argv[2])
         if int(sys.argv[3]) < width*height:
             MINECOUNT = int(sys.argv[3])
+            difficulty = 'custom'
+        else:
+            print('Minecount muss be less than width x height.')
+            system.exit(0)
     else:
         print('Specify parameters as width height minecount (for example ./minebash.py 5 5 7)')
         sys.exit(0)
@@ -254,7 +296,7 @@ def handle_input(k):
             hit(CURSOR_POSITION[0], CURSOR_POSITION[1])      
 
 def print_score(screen):
-    scorestr = 'Mines: {} Flags: {}'.format(MINECOUNT, FLAGCOUNT)
+    scorestr = 'Mines: {} Flags: {} Difficulty: {}'.format(MINECOUNT, FLAGCOUNT, difficulty)
     xpos = int((score_x) - (len(scorestr)/2)) + int(OFFSET/2)
     screen.addstr(score_y, xpos, scorestr)
 
