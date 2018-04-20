@@ -300,7 +300,14 @@ def handle_input(k):
 def print_score(screen):
     scorestr = 'Mines: {} Flags: {} Difficulty: {}'.format(MINECOUNT, FLAGCOUNT, difficulty)
     xpos = int((score_x) - (len(scorestr)/2)) + int(OFFSET/2)
+    if xpos < 0: xpos = 0
     screen.addstr(score_y, xpos, scorestr)
+
+def print_controls(screen):
+    controlstr = 'Arrow Keys: Move  F: Place flag   Space: Open field'
+    xpos = int((score_x) - len(controlstr)/2) + int(OFFSET/2)
+    if xpos < 0: xpos = 0
+    screen.addstr(score_y +1, xpos, controlstr)
 
 def setup_colors():
     curses.start_color()
@@ -330,6 +337,7 @@ def main(stdscr):
             STARTTIME = time.time()
         check_score()
         print_score(stdscr)
+        print_controls(stdscr)
         stdscr.refresh()
         #stdscr.getkey()
 if __name__ == "__main__":
