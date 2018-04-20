@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-#TODO: highscore (?), cursor wrapping
-
+#TODO: highscore 
 import random, io, sys, time, os
 
 import curses
@@ -280,15 +279,23 @@ def handle_input(k):
     if k == curses.KEY_LEFT:
         if CURSOR_POSITION[0] > 0:
             CURSOR_POSITION[0] -=1
+        else:
+            CURSOR_POSITION[0] = width-1
     elif k == curses.KEY_RIGHT:
         if CURSOR_POSITION[0] < width-1:
             CURSOR_POSITION[0] +=1    
+        else:
+            CURSOR_POSITION[0] = 0
     elif k == curses.KEY_UP:
         if CURSOR_POSITION[1] > 0:
             CURSOR_POSITION[1] -=1
+        else:
+            CURSOR_POSITION[1] = height-1
     elif k == curses.KEY_DOWN:
         if CURSOR_POSITION[1] < height-1:
-            CURSOR_POSITION[1] +=1
+            CURSOR_POSITION[1] += 1
+        else:
+            CURSOR_POSITION[1] = 0
     elif k == ord('f'):
         if FIELD_GENERATED:
             place_flag(CURSOR_POSITION[0], CURSOR_POSITION[1])
