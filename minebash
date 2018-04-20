@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#TODO: restartable, highscore (?)
+#TODO: highscore (?), cursor wrapping
 
 import random, io, sys, time, os
 
@@ -82,7 +82,7 @@ if len(sys.argv) > 1:
         print(param_error)
         sys.exit(0)
 playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
-
+#playfield = 0
 
 #stdscr = curses.initscr()
 #curses.noecho()
@@ -105,10 +105,6 @@ def setup_strings(colcount):
             tailline += '───┴'
 
 def endgame(msg=''):
- #   curses.nocbreak()
-  #  stdscr.keypad(False)
-   # curses.echo()
-    #curses.endwin()
     if msg != '':
         print(msg)
     sys.exit(0)
@@ -167,7 +163,7 @@ def gameover(win):
         SCREEN.addstr(20, 0, '                        (        |(||(||)||||        )')
         SCREEN.addstr(21, 0, '                          (     //|/l|||)|\\ \     )')
         SCREEN.addstr(22, 0, '                        (/ / //  /|//||||\\  \ \  \ _)')        
-        SCREEN.addstr(23, 0, '                          You lose! Press q to quit.')
+        SCREEN.addstr(23, 0, '                  You lose! Press Q to quit, or R to restart!')
     else:
         now = time.time()
         elapsed = now - STARTTIME
@@ -183,12 +179,11 @@ def gameover(win):
         SCREEN.addstr(6, 0, '| $$/   \  $$|  $$$$$$$| $$| $$      | $$$$$$$/|  $$$$$$/| $$  | $$|  $$$$$$$ /$$')
         SCREEN.addstr(7, 0, '|__/     \__/ \_______/|__/|__/      |_______/  \______/ |__/  |__/ \_______/|__/')
         SCREEN.addstr(10, 0, winstr)
-        SCREEN.addstr(11,0, 'Press q to quit!')
+        SCREEN.addstr(11,0, 'Press Q to quit, or R to restart!')
     while True:
         key = SCREEN.getch()
-        if key == ord('q'):
-            endgame()
-        #if key == ord('r'):
+        if key == ord('q'):   return False
+        elif key == ord('r'): return True
         #    os.execl(sys.executable, sys.executable, *sys.argv)
 
 def print_playfield(playfield, screen):
@@ -257,11 +252,12 @@ def hit(x, y, recursive_call=False):
                                     if hint == 0:
                                         hit(i,j)
     elif playfield[y][x] == MINE:
-        gameover(False)
+        #gameover(False)
+        return True
 
 def check_score():
-    if FIELDS_CLEARED == (width*height)-MINECOUNT:
-        gameover(True)
+    return FIELDS_CLEARED == (width*height)-MINECOUNT
+        
 
 def place_flag(x, y):
     global playfield, FLAGCOUNT
@@ -300,7 +296,8 @@ def handle_input(k):
         if not firstmove:
             firstmove = True
         else:
-            hit(CURSOR_POSITION[0], CURSOR_POSITION[1])      
+            return hit(CURSOR_POSITION[0], CURSOR_POSITION[1]) 
+    return False   
 
 def print_score(screen):
     scorestr = 'Mines: {} Flags: {} Difficulty: {}'.format(MINECOUNT, FLAGCOUNT, difficulty)
@@ -322,10 +319,18 @@ def setup_colors():
     curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
     curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_WHITE)
+
+def reset():
+    global firstmove,  playfield, FIELD_GENERATED, FIELDS_CLEARED, CURSOR_POSITION
+    firstmove = False
+    playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
+    FIELD_GENERATED = False
+    FIELDS_CLEARED = 0
+    CURSOR_POSITION = [0,0]
         
 
 def main(stdscr):
-    global SCREEN
+    global SCREEN, firstmove, FIELD_GENERATED, FIELDS_CLEARED, playfield, CURSOR_POSITION
     SCREEN = stdscr
     stdscr.clear()
     setup_strings(width)
@@ -333,17 +338,29 @@ def main(stdscr):
     #generate mines:
     #TODO: user input
     while(True):
-        print_playfield(playfield, stdscr)
-        key = stdscr.getch()
-        handle_input(key)
-        if (firstmove) and not (FIELD_GENERATED):
-            setup_playfield(width, height, CURSOR_POSITION[0], CURSOR_POSITION[1])
-            handle_input(key)
-            STARTTIME = time.time()
-        check_score()
-        print_score(stdscr)
-        print_controls(stdscr)
-        stdscr.refresh()
-        #stdscr.getkey()
+        reset()
+        while(True): #game loop
+            print_playfield(playfield, stdscr)
+            key = stdscr.getch()
+            if handle_input(key):
+                restart = gameover(False) #user hit a mine
+                if restart: 
+                    stdscr.clear()
+                    break
+                else: endgame()
+            if (firstmove) and not (FIELD_GENERATED):
+                setup_playfield(width, height, CURSOR_POSITION[0], CURSOR_POSITION[1])
+                handle_input(key)
+                STARTTIME = time.time()
+            if check_score():
+                restart = gameover(True) # does user want restart?
+                if restart: 
+                    stdscr.clear()
+                    break
+                else: endgame()  
+            print_score(stdscr)
+            print_controls(stdscr)
+            stdscr.refresh()
+            #stdscr.getkey()
 if __name__ == "__main__":
     wrapper(main)
