@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#TODO: show controls, restartable, command line flags like "easy, hard"
+#TODO: restartable, highscore (?)
 
 import random, io, sys, time, os
 
@@ -87,17 +87,22 @@ playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
 #stdscr = curses.initscr()
 #curses.noecho()
 #curses.cbreak()
-headline = '.'
-midline = '|'
-tailline = '\''
+headline = '┌'
+midline  = '├'
+tailline = '└'
 
 def setup_strings(colcount):
     #setup lines to print
+    global headline, midline, tailline
     for i in range(colcount):
-        global headline, midline, tailline
-        headline += '---.'
-        midline += '---|'
-        tailline += '---\''
+        if i == width-1:
+            headline += '───┐'
+            midline  += '───┤'
+            tailline += '───┘'
+        else:    
+            headline += '───┬'
+            midline  += '───┼'
+            tailline += '───┴'
 
 def endgame(msg=''):
  #   curses.nocbreak()
@@ -193,7 +198,7 @@ def print_playfield(playfield, screen):
     currentline +=1
     #print headline
     for rowindex, row in enumerate(playfield):
-        screen.addstr(currentline, 10, '|')
+        screen.addstr(currentline, 10, '│')
         pos = OFFSET
         for colindex, cell in enumerate(row):
             # is the cell selected?
@@ -220,9 +225,9 @@ def print_playfield(playfield, screen):
             #    rowstring += 'X'
             pos += 1
             if selected:
-                screen.addstr(currentline, pos, ']|')
+                screen.addstr(currentline, pos, ']│')
             else:
-                screen.addstr(currentline, pos, ' |')
+                screen.addstr(currentline, pos, ' │')
             pos += 2
         currentline +=1
         if(rowindex < len(row)-1):
