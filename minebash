@@ -129,8 +129,8 @@ def setup_playfield(w, h, x, y):
     minesleft = MINECOUNT
     while minesleft > 0:
         randx = random.randint(0, width-1)
-        randy = random.randint(1, height-1)
-        if playfield[randy][randx] != MINE and randx != x and randy != y:
+        randy = random.randint(0, height-1)
+        if playfield[randy][randx] != MINE and ([randx, randy] != CURSOR_POSITION):
             playfield[randy][randx] = MINE
             minesleft -= 1
     FIELD_GENERATED = True
