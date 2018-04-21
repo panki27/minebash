@@ -1,6 +1,7 @@
 # minebash
 
 minebash is a minesweeper implementation in Python for the Linux command line.
+![minebash screenshot](https://i.imgur.com/dADsjEh.png "it's fun - IGN 10/10")
 
 ## Features
 
