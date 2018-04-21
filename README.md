@@ -10,7 +10,7 @@ minebash is a minesweeper implementation in Python for the Linux command line.
 
 ## Dependencies
 
-1. None, aside from curses which is standard in Python on Linux
+- Python for Linux (requires Curses)
 
 ## Setup  
 

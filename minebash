@@ -34,7 +34,7 @@ clWhite, clRed, clCyan, clBlue, clYellow, clGreen, clInverted = None, None, None
 difficulty = 'medium'
 
 param_error = 'minebash: Invalid parameters. See \'minebash.py ?\' for help '
-helpstr = '''Usage: minebash.py [easy|medium|hard] [width height minecount]
+helpstr = '''Usage: minebash [easy|medium|hard] [width height minecount]
     
 Difficulty presets:
     easy:    5x5  4 mines
