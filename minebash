@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#TODO: highscore 
+#TODO: highscore, monochrome, expect ctrl c, flags red if too many
 import random, io, sys, time, os
 
 import curses
@@ -12,6 +12,8 @@ UNKNOWN = -3
 FLAG_MINE = -4
 
 score_x, score_y = 0, 0
+CURSOR_POSITION=[0,0]
+
 OFFSET = 11
 
 STARTTIME = 0
@@ -21,12 +23,13 @@ SCREEN = 0
 firstmove = False
 FIELD_GENERATED = False
 
-CURSOR_POSITION=[0,0]
 FIELDS_CLEARED = 0
 
 width, height = 9, 9
 MINECOUNT = 10
 FLAGCOUNT = 0
+
+clWhite, clRed, clCyan, clBlue, clYellow, clGreen, clInverted = None, None, None, None, None, None, None #can only be setup after curses has loaded
 
 difficulty = 'medium'
 
@@ -81,17 +84,13 @@ if len(sys.argv) > 1:
         print(param_error)
         sys.exit(0)
 playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
-#playfield = 0
 
-#stdscr = curses.initscr()
-#curses.noecho()
-#curses.cbreak()
 headline = '┌'
 midline  = '├'
 tailline = '└'
 
 def setup_strings(colcount):
-    #setup lines to print
+    #setup lines to print at the end and start of the matrix, aswell as between rows
     global headline, midline, tailline
     for i in range(colcount):
         if i == width-1:
@@ -111,25 +110,27 @@ def endgame(msg=''):
 def calculate_hint(col, row):
     hint = 0
     if playfield[row][col] != MINE:
+        #step through the surrounding 8 (or less) fields
         for x in range(col-1, col+2):
             if x >= 0 and x < len(playfield):
                 for y in range(row-1, row+2):
                     if y >= 0 and y < len(playfield[0]):
                         if playfield[y][x] == MINE or playfield[y][x] == FLAG_MINE:
+                            #add the mines together
                             hint+=1
     else:
         hint = MINE
     return hint
 
 def setup_playfield(w, h, x, y):
-#do this only once [AFTER THE FIRST GUESS] -> Done
-    #randomly distribute mines across the field
     global playfield, FIELD_GENERATED, STARTTIME
 
     minesleft = MINECOUNT
+    #randomly distribute mines across the field
     while minesleft > 0:
         randx = random.randint(0, width-1)
         randy = random.randint(0, height-1)
+        #make sure the users first guess isn't a mine
         if playfield[randy][randx] != MINE and ([randx, randy] != CURSOR_POSITION):
             playfield[randy][randx] = MINE
             minesleft -= 1
@@ -183,75 +184,100 @@ def gameover(win):
         key = SCREEN.getch()
         if key == ord('q'):   return False
         elif key == ord('r'): return True
-        #    os.execl(sys.executable, sys.executable, *sys.argv)
+
+def getTileLeft(x, y):
+    cell = playfield[y][x]
+    s = ''
+    if [x, y] == CURSOR_POSITION:
+        s += '['
+        color = clGreen
+    else:
+        s += ' '
+        color = clWhite
+    return s, color
+
+def getTileMiddle(x,y):
+    cell = playfield[y][x]
+    s = ''
+    if cell == 0:
+        s += ' '
+        color = clWhite
+    elif cell == UNKNOWN or cell == MINE:
+        s += ' '
+        color = clInverted
+    elif cell == FLAG_MINE or cell == FLAG:
+        s +=  'P'
+        color = clRed
+    else:
+        # coloring the hints
+        if cell == 1:   color = clCyan #cyan
+        elif cell == 2: color = clBlue #blue
+        else:           color = clYellow #yellow  
+        s += str(cell)
+
+    return s, color
+
+def getTileRight(x, y):
+    cell = playfield[y][x]
+    selected = False
+    s = ''
+    if [x, y] == CURSOR_POSITION:
+        s += ']'
+        color = clGreen
+    else:
+        s += ' '
+        color = clWhite
+    return s, color
 
 def print_playfield(playfield, screen):
     global score_x, score_y
+    #print the matrix 
     currentline = 0
-    screen.addstr(currentline, 10, headline, curses.color_pair(1))
+    screen.addstr(currentline, OFFSET-1, headline, clWhite)
     currentline +=1
-    #print headline
     for rowindex, row in enumerate(playfield):
-        screen.addstr(currentline, 10, '│')
+        screen.addstr(currentline, OFFSET-1, '│')
         pos = OFFSET
         for colindex, cell in enumerate(row):
-            # is the cell selected?
-            selected = False
-            if [colindex, rowindex] == CURSOR_POSITION:
-                screen.addstr(currentline, pos, '[')
-                selected = True
-            else:
-                screen.addstr(currentline, pos, ' ')
+            part, color = getTileLeft(colindex, rowindex)
+            screen.addstr(currentline, pos, part, color)
             pos += 1
-            # did we find a hint?
-            if cell > 0:
-                if cell == 1:   color = curses.color_pair(3) #cyan
-                elif cell == 2: color = curses.color_pair(4) #blue
-                else:           color = curses.color_pair(5) #yellow
-                screen.addstr(currentline, pos, str(cell), color)
-            elif cell == 0:
-                screen.addstr(currentline, pos, ' ')
-            elif cell == UNKNOWN or cell == MINE:
-                screen.addstr(currentline, pos, '#', curses.color_pair(7)) #rowstring+= '#'
-            elif cell == FLAG_MINE or cell == FLAG:
-                screen.addstr(currentline, pos, 'P', curses.color_pair(2)) #rowstring += 'P'
-            #elif cell == MINE:
-            #    rowstring += 'X'
+            part, color = getTileMiddle(colindex, rowindex)
+            screen.addstr(currentline, pos, part, color)
             pos += 1
-            if selected:
-                screen.addstr(currentline, pos, ']│')
-            else:
-                screen.addstr(currentline, pos, ' │')
-            pos += 2
+            part, color = getTileRight(colindex, rowindex)
+            screen.addstr(currentline, pos, part, color)
+            pos += 1
+            screen.addstr(currentline, pos, '│')
+            pos += 1
         currentline +=1
         if(rowindex < len(row)-1):
             screen.addstr(currentline, 10, midline)
             currentline +=1
     screen.addstr(currentline, 10, tailline)
     currentline +=1
+    #get a centered position below the playfield:
     score_y = currentline
     score_x = int(pos/2)
-    #print tailline
 
-def hit(x, y, recursive_call=False):
+def hit(x, y):
     global playfield, FIELDS_CLEARED
     if playfield[y][x] == UNKNOWN:
+        #get the number that should be printed in the cell
         hint = calculate_hint(x, y)
         playfield[y][x] = hint
         FIELDS_CLEARED += 1
-        if not recursive_call and hint == NOTHING:
+        if hint == NOTHING:
+            #we hit a 0 or empty field, so we need to hit all the fields around it
+            #first, step through the 8 or less surrounding fields
             for i in range(x-1, x+2):
                 for j in range(y-1, y+2):
                     if i >= 0 and i < width:
                         if j >= 0 and j< height:
                             if playfield[j][i] == UNKNOWN:
-                                    hint = calculate_hint(i, j)
-                                    if hint > 0 and hint<3:
-                                        hit(i,j, True)
-                                    if hint == 0:
-                                        hit(i,j)
+                                    #player has not opened this field yet
+                                    hit(i,j)
     elif playfield[y][x] == MINE:
-        #gameover(False)
         return True
 
 def check_score():
@@ -260,7 +286,6 @@ def check_score():
 
 def place_flag(x, y):
     global playfield, FLAGCOUNT
-    #playfield[y][x] = playfield[y][x]
     if playfield[y][x] == MINE:
         playfield[y][x] = FLAG_MINE
         FLAGCOUNT += 1
@@ -297,6 +322,7 @@ def handle_input(k):
         else:
             CURSOR_POSITION[1] = 0
     elif k == ord('f'):
+        # only place flags after placing mines
         if FIELD_GENERATED:
             place_flag(CURSOR_POSITION[0], CURSOR_POSITION[1])
     elif k == ord(' '):
@@ -306,26 +332,33 @@ def handle_input(k):
             return hit(CURSOR_POSITION[0], CURSOR_POSITION[1]) 
     return False   
 
-def print_score(screen):
+def print_footer(screen):
     scorestr = 'Mines: {} Flags: {} Difficulty: {}'.format(MINECOUNT, FLAGCOUNT, difficulty)
-    xpos = int((score_x) - (len(scorestr)/2)) + int(OFFSET/2)
-    if xpos < 0: xpos = 0
-    screen.addstr(score_y, xpos, scorestr)
-
-def print_controls(screen):
     controlstr = 'Arrow Keys: Move  F: Place flag   Space: Open field'
-    xpos = int((score_x) - len(controlstr)/2) + int(OFFSET/2)
-    if xpos < 0: xpos = 0
-    screen.addstr(score_y +1, xpos, controlstr)
+    score_xpos = int((score_x) - (len(scorestr)/2)) + int(OFFSET/2)
+    control_xpos = int((score_x) - len(controlstr)/2) + int(OFFSET/2)
+    if score_xpos < 0: score_xpos = 0
+    if control_xpos < 0: control_xpos = 0
+    screen.addstr(score_y, score_xpos, scorestr)
+    screen.addstr(score_y+1, control_xpos, controlstr)
 
 def setup_colors():
+    global clWhite, clRed, clCyan, clBlue, clYellow, clGreen, clInverted
     curses.start_color()
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    #curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)
     curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
     curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_WHITE)
+    clWhite = curses.color_pair(0) #hardwired
+    clRed = curses.color_pair(2)
+    clCyan = curses.color_pair(3)
+    clBlue = curses.color_pair(4)
+    clYellow   = curses.color_pair(5)
+    clGreen    = curses.color_pair(6)
+    clInverted = curses.color_pair(7)
 
 def reset():
     global firstmove,  playfield, FIELD_GENERATED, FIELDS_CLEARED, CURSOR_POSITION
@@ -335,15 +368,12 @@ def reset():
     FIELDS_CLEARED = 0
     CURSOR_POSITION = [0,0]
         
-
 def main(stdscr):
     global SCREEN, firstmove, FIELD_GENERATED, FIELDS_CLEARED, playfield, CURSOR_POSITION
     SCREEN = stdscr
     stdscr.clear()
     setup_strings(width)
     setup_colors()
-    #generate mines:
-    #TODO: user input
     while(True):
         reset()
         while(True): #game loop
@@ -356,18 +386,19 @@ def main(stdscr):
                     break
                 else: endgame()
             if (firstmove) and not (FIELD_GENERATED):
+                #generate the field
                 setup_playfield(width, height, CURSOR_POSITION[0], CURSOR_POSITION[1])
+                #do this a second time, because we didn't know what the field would be the first time
                 handle_input(key)
                 STARTTIME = time.time()
             if check_score():
+                #player wins!
                 restart = gameover(True) # does user want restart?
                 if restart: 
                     stdscr.clear()
                     break
                 else: endgame()  
-            print_score(stdscr)
-            print_controls(stdscr)
+            print_footer(stdscr)
             stdscr.refresh()
-            #stdscr.getkey()
 if __name__ == "__main__":
     wrapper(main)
