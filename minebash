@@ -275,8 +275,8 @@ def hit(x, y):
                     if i >= 0 and i < width:
                         if j >= 0 and j< height:
                             if playfield[j][i] == UNKNOWN:
-                                    #player has not opened this field yet
-                                    hit(i,j)
+                                #player has not opened this field yet
+                                hit(i,j)
     elif playfield[y][x] == MINE:
         return True
 
@@ -361,10 +361,11 @@ def setup_colors():
     clInverted = curses.color_pair(7)
 
 def reset():
-    global firstmove,  playfield, FIELD_GENERATED, FIELDS_CLEARED, CURSOR_POSITION
+    global firstmove,  playfield, FIELD_GENERATED, FIELDS_CLEARED, CURSOR_POSITION, FLAGCOUNT
     firstmove = False
     playfield = [[UNKNOWN for x in range(width)] for y in range(height)]
     FIELD_GENERATED = False
+    FLAGCOUNT = 0
     FIELDS_CLEARED = 0
     CURSOR_POSITION = [0,0]
         
