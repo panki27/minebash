@@ -33,7 +33,7 @@ clWhite, clRed, clCyan, clBlue, clYellow, clGreen, clInverted = None, None, None
 
 difficulty = 'medium'
 
-param_error = 'minebash: Invalid parameters. See \'minebash.py ?\' for help '
+param_error = 'minebash: Invalid parameters. See \'minebash help\' for help '
 helpstr = '''Usage: minebash [easy|medium|hard] [width height minecount]
     
 Difficulty presets:
@@ -52,7 +52,7 @@ Controls:
 
 if len(sys.argv) > 1:
     if len(sys.argv) == 2: #param is string like easy, hard
-        if sys.argv[1] == '?':
+        if sys.argv[1] == 'help':
             print(helpstr)
             sys.exit(0)
         if sys.argv[1] == 'easy':
@@ -95,15 +95,6 @@ def setup_strings(colcount):
     headline = '┌' + "".join('───┬' for i in range(width-1)) + '───┐'
     midline  = '├' + ''.join('───┼' for i in range(width-1)) + '───┤'  
     tailline = '└' + ''.join('───┴' for i in range(width-1)) + '───┘' 
-    #for i in range(colcount):
-        #if i == width-1:
-            #headline += '───┐'
-            #midline  += '───┤'
-            #tailline += '───┘'
-        #else:    
-            #headline += '───┬'
-            #midline  += '───┼'
-            #tailline += '───┴'
 
 def endgame(msg=''):
     if msg != '':

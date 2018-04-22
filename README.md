@@ -28,4 +28,4 @@ chmod +x minebash
 - F: Place flag
 
 ## Command line options
-See 'minebash ?'
+See 'minebash help'
