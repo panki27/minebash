@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#TODO: highscore, monochrome, expect ctrl c, flags red if too many
+#TODO: highscore, monochrome, flags red if too many
 import random, io, sys, time, os
 
 import curses
@@ -398,4 +398,7 @@ def main(stdscr):
             print_footer(stdscr)
             stdscr.refresh()
 if __name__ == "__main__":
-    wrapper(main)
+    try:
+        wrapper(main)
+    except KeyboardInterrupt:
+        sys.exit(0)
