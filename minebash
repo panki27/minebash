@@ -92,9 +92,9 @@ tailline = '└'
 def setup_strings(colcount):
     #setup lines to print at the end and start of the matrix, aswell as between rows
     global headline, midline, tailline
-    headline = '┌' + "".join('───┬' for i in range(width-1)) + '───┐'
-    midline  = '├' + ''.join('───┼' for i in range(width-1)) + '───┤'  
-    tailline = '└' + ''.join('───┴' for i in range(width-1)) + '───┘' 
+    headline = '┌' + '┬'.join('───' for i in range(width)) + '┐'
+    midline  = '├' + '┼'.join('───' for i in range(width)) + '┤'  
+    tailline = '└' + '┴'.join('───' for i in range(width)) + '┘' 
 
 def endgame(msg=''):
     if msg != '':
