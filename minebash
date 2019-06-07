@@ -35,7 +35,7 @@ difficulty = 'medium'
 
 param_error = 'minebash: Invalid parameters. See \'minebash help\' for help '
 helpstr = '''Usage: minebash [easy|medium|hard] | [width height minecount]
-    
+
 Difficulty presets:
     easy:    5x5  4 mines
     medium:  9x9 15 mines
@@ -47,7 +47,7 @@ Specify your own:
 Controls:
     Arrow Keys: Move Cursor
     Spacebar:   Try field
-    F:          Place flag 
+    F:          Place flag
 '''
 
 if len(sys.argv) > 1:
@@ -70,7 +70,7 @@ if len(sys.argv) > 1:
         else:
             print(param_error)
             sys.exit(1)
-        difficulty = sys.argv[1] 
+        difficulty = sys.argv[1]
     elif len(sys.argv) == 4: #this means the user has specified width, height and minecount
         try:
             width = int(sys.argv[1])
@@ -97,8 +97,8 @@ def setup_strings(colcount):
     #setup lines to print at the end and start of the matrix, aswell as between rows
     global headline, midline, tailline
     headline = '┌' + '┬'.join('───' for i in range(width)) + '┐'
-    midline  = '├' + '┼'.join('───' for i in range(width)) + '┤'  
-    tailline = '└' + '┴'.join('───' for i in range(width)) + '┘' 
+    midline  = '├' + '┼'.join('───' for i in range(width)) + '┤'
+    tailline = '└' + '┴'.join('───' for i in range(width)) + '┘'
 
 def endgame(msg=''):
     if msg != '':
@@ -160,7 +160,7 @@ def gameover(win):
         SCREEN.addstr(19, 0, r'                          (      ||\(|(|)|/||     )')
         SCREEN.addstr(20, 0, r'                        (        |(||(||)||||        )')
         SCREEN.addstr(21, 0, r'                          (     //|/l|||)|\\ \     )')
-        SCREEN.addstr(22, 0, r'                        (/ / //  /|//||||\\  \ \  \ _)')        
+        SCREEN.addstr(22, 0, r'                        (/ / //  /|//||||\\  \ \  \ _)')
         SCREEN.addstr(23, 0, '                  You lose! Press Q to quit, or R to restart!')
     else:
         now = time.time()
@@ -212,7 +212,7 @@ def getTileMiddle(x,y):
         # coloring the hints
         if cell == 1:   color = clCyan #cyan
         elif cell == 2: color = clBlue #blue
-        else:           color = clYellow #yellow  
+        else:           color = clYellow #yellow
         s += str(cell)
 
     return s, color
@@ -231,7 +231,7 @@ def getTileRight(x, y):
 
 def print_playfield(playfield, screen):
     global score_x, score_y
-    #print the matrix 
+    #print the matrix
     currentline = 0
     screen.addstr(currentline, OFFSET-1, headline, clWhite)
     currentline +=1
@@ -282,7 +282,7 @@ def hit(x, y):
 
 def check_score():
     return FIELDS_CLEARED == (width*height)-MINECOUNT
-        
+
 
 def place_flag(x, y):
     global playfield, FLAGCOUNT
@@ -308,7 +308,7 @@ def handle_input(k):
             CURSOR_POSITION[0] = width-1
     elif k == curses.KEY_RIGHT:
         if CURSOR_POSITION[0] < width-1:
-            CURSOR_POSITION[0] +=1    
+            CURSOR_POSITION[0] +=1
         else:
             CURSOR_POSITION[0] = 0
     elif k == curses.KEY_UP:
@@ -329,8 +329,8 @@ def handle_input(k):
         if not firstmove:
             firstmove = True
         else:
-            return hit(CURSOR_POSITION[0], CURSOR_POSITION[1]) 
-    return False   
+            return hit(CURSOR_POSITION[0], CURSOR_POSITION[1])
+    return False
 
 def print_footer(screen):
     scorestr = 'Mines: {} Flags: {} Difficulty: {}'.format(MINECOUNT, FLAGCOUNT, difficulty)
@@ -368,7 +368,7 @@ def reset():
     FLAGCOUNT = 0
     FIELDS_CLEARED = 0
     CURSOR_POSITION = [0,0]
-        
+
 def main(stdscr):
     global SCREEN, firstmove, FIELD_GENERATED, FIELDS_CLEARED, playfield, CURSOR_POSITION
     SCREEN = stdscr
@@ -382,7 +382,7 @@ def main(stdscr):
             key = stdscr.getch()
             if handle_input(key):
                 restart = gameover(False) #user hit a mine
-                if restart: 
+                if restart:
                     stdscr.clear()
                     break
                 else: endgame()
@@ -395,10 +395,10 @@ def main(stdscr):
             if check_score():
                 #player wins!
                 restart = gameover(True) # does user want restart?
-                if restart: 
+                if restart:
                     stdscr.clear()
                     break
-                else: endgame()  
+                else: endgame()
             print_footer(stdscr)
             stdscr.refresh()
 if __name__ == "__main__":
